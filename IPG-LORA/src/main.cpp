@@ -1,16 +1,18 @@
 #include <arduino.h>
 #include <lmic.h>
 #include "lorakeys.h"
-
 #include <hal/hal.h>
 #include <SPI.h>
-//#include <ttn_credentials.h>
 #include<CayenneLPP.h>
-
 #include <Wire.h>
 
 #define sda 21
 #define scl 22
+
+#define MOSI 27
+#define MISO 19
+#define CS 18
+#define SCLK 5
 
 CayenneLPP lpp(51);
 
@@ -38,18 +40,11 @@ uint8_t addPresence(uint8_t channel, uint8_t value);
 
 // Schedule TX every this many seconds
 // Respect Fair Access Policy and Maximum Duty Cycle!
-// https://www.thethingsnetwork.org/docs/lorawan/duty-cycle.html
-// https://www.loratools.nl/#/airtime
 const unsigned TX_INTERVAL = 30;
 
 // Saves the LMIC structure during DeepSleep
 RTC_DATA_ATTR lmic_t RTC_LMIC;
 
-// DALVA change METER contador e SENSORES
-#define MOSI 27
-#define MISO 19
-#define CS 18
-#define SCLK 5
 
 const lmic_pinmap lmic_pins = {
   .nss = 18, 
@@ -363,7 +358,6 @@ void onEvent(ev_t ev)
     }
 }
 
-
 /*void SaveLMICToRTC(int deepsleep_sec)
 {
     Serial.println(F("Save LMIC to RTC"));
@@ -415,11 +409,11 @@ void onEvent(ev_t ev)
 void setup()
 {
     Serial.begin(115200);
-
+     
     Wire.begin(sda, scl);
     SPI.begin(SCLK, MISO, MOSI, CS); // sclk, miso, mosi, ss
     delay(1000);
-    Serial.println(F("Starting DeepSleep test"));
+    Serial.println(F("Starting cenas nice ..."));
     PrintLMICVersion();
 
     // LMIC init
@@ -442,8 +436,8 @@ void setup()
 
 void loop()
 {
+  
     static unsigned long lastPrintTime = 0;
-
     os_runloop_once();
 
     // deep sleep --------------------------------------------------------  DEEP SLEEP
