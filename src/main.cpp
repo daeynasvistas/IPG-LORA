@@ -6,13 +6,52 @@
 #include<CayenneLPP.h>
 #include <Wire.h>
 
-#define sda 21
-#define scl 22
 
+
+#define LORAWAN_308 //Daey
+
+#if defined(LORAWAN_308)
+
+        #define LED_PIN 33
+
+
+        #define sda 21
+        #define scl 22
+
+        #define MOSI 23
+        #define MISO 19
+        #define CS 15
+        #define SCLK 18
+        #define DIO0 25
+        #define DIO1 2
+        #define DIO3 27
+
+        constexpr lmic_pinmap lmic_pins = {
+            .nss = 15,
+            .rxtx = LMIC_UNUSED_PIN,
+            .rst = LMIC_UNUSED_PIN,
+            .dio = {25, 2},
+
+        };
+#endif
+
+#if defined(LORAWAN_lygo)
 #define MOSI 27
 #define MISO 19
 #define CS 18
 #define SCLK 5
+
+
+const lmic_pinmap lmic_pins = {
+  .nss = 18, 
+  .rxtx = LMIC_UNUSED_PIN,
+  .rst = 14,
+  .dio = {/*dio0*/ 26, /*dio1*/ 33, /*dio2*/ 32}
+};
+
+
+#endif
+
 
 CayenneLPP lpp(51);
 
@@ -45,13 +84,6 @@ const unsigned TX_INTERVAL = 30;
 // Saves the LMIC structure during DeepSleep
 RTC_DATA_ATTR lmic_t RTC_LMIC;
 
-
-const lmic_pinmap lmic_pins = {
-  .nss = 18, 
-  .rxtx = LMIC_UNUSED_PIN,
-  .rst = 14,
-  .dio = {/*dio0*/ 26, /*dio1*/ 33, /*dio2*/ 32}
-};
 
 // opmode def
 // https://github.com/mcci-catena/arduino-lmic/blob/89c28c5888338f8fc851851bb64968f2a493462f/src/lmic/lmic.h#L233
@@ -216,7 +248,12 @@ void do_send(osjob_t *j)
     {
         // Prepare upstream data transmission at the next possible time.
         lpp.reset();
-        lpp.addTemperature(4, random(0,30));
+        
+        //simulation sensor
+        lpp.addTemperature(4, random(20,30));
+        lpp.addLuminosity(4, random(0,1024));
+
+
         // Prepare upstream data transmission at the next possible time.
         LMIC_setTxData2(1, lpp.getBuffer(), lpp.getSize(), 0);
         Serial.println(F("Packet queued"));
@@ -299,14 +336,24 @@ void onEvent(ev_t ev)
             Serial.print(LMIC.dataLen);
             Serial.println(F(" bytes of payload"));
 
-            for (int i = 0; i < LMIC.dataLen; i++) {
-            if (LMIC.frame[LMIC.dataBeg + i] < 0x10) {
-                Serial.print(F("0"));
-            }
-            Serial.println(LMIC.frame[LMIC.dataBeg + i], HEX);
-            Serial.println(LMIC.frame[LMIC.dataBeg + i], DEC);
+          //  for (int i = 0; i < LMIC.dataLen; i++) {
+          //  if (LMIC.frame[LMIC.dataBeg + i] < 0x10) {
+          //      Serial.print(F("0"));
+          //  }
+          //  Serial.println(LMIC.frame[LMIC.dataBeg + i], HEX);
+          //  Serial.println(LMIC.frame[LMIC.dataBeg + i], DEC);
 
-            }
+          //  }
+
+                    int TxGet = ( LMIC.frame[LMIC.dataBeg]  ) ;
+                    Serial.println(TxGet, HEX);
+                    if (TxGet>0){
+                        //mudar estado led
+                        digitalWrite(LED_PIN, HIGH); // turn on LE
+                    }else{
+                        //nepias, led continua low
+                        digitalWrite(LED_PIN, LOW); // turn on LE
+                    }
 
 
         }
@@ -409,6 +456,10 @@ void onEvent(ev_t ev)
 void setup()
 {
     Serial.begin(115200);
+    // initialize the LED pin as an output:
+    pinMode(LED_PIN, OUTPUT);
+    digitalWrite(LED_PIN, LOW); // turn on LE
+
      
     Wire.begin(sda, scl);
     SPI.begin(SCLK, MISO, MOSI, CS); // sclk, miso, mosi, ss
